@@ -1,1 +1,589 @@
-testing123
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Powered Autonomous Data Support Workflow</title>
+<style>
+:root{
+  --bg:#0B1020;
+  --blue:#4f8cff;      /* processing */
+  --purple:#a970ff;    /* AI intelligence */
+  --cyan:#3fe0e0;      /* data flow */
+  --green:#42d392;     /* success */
+  --orange:#ffab5e;    /* human approval */
+  --red:#ff6b6b;       /* rejection */
+  --ink:#eef2fb;
+  --ink-dim:#95a3c4;
+  --ink-faint:#5e6d92;
+  --glass:rgba(255,255,255,0.045);
+  --glass-brd:rgba(255,255,255,0.10);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  position:relative;
+}
+/* ambient background layers */
+.bg-gradients{position:fixed;inset:0;z-index:0;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.30;animation:drift 26s ease-in-out infinite}
+.blob.b1{width:620px;height:620px;background:radial-gradient(circle,#2a49b0,transparent 70%);top:-180px;left:-120px}
+.blob.b2{width:560px;height:560px;background:radial-gradient(circle,#6a3fb0,transparent 70%);bottom:-200px;right:-100px;animation-delay:-8s}
+.blob.b3{width:480px;height:480px;background:radial-gradient(circle,#1f7a86,transparent 70%);top:40%;left:55%;animation-delay:-15s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,30px) scale(1.08)}66%{transform:translate(-30px,20px) scale(.96)}}
+/* light beam */
+.beam{position:fixed;top:-30%;left:50%;width:2px;height:160%;background:linear-gradient(to bottom,transparent,rgba(120,150,255,.18),transparent);transform:rotate(18deg);filter:blur(2px);z-index:0;animation:beamSweep 18s linear infinite}
+@keyframes beamSweep{0%{transform:translateX(-60vw) rotate(18deg)}100%{transform:translateX(60vw) rotate(18deg)}}
+/* particles canvas */
+#particles{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+.stage{position:relative;z-index:2;height:100vh;display:flex;flex-direction:column;padding:22px 30px 16px}
+/* header */
+header{text-align:center;flex:0 0 auto;margin-bottom:6px}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);
+  background:var(--glass);border:1px solid var(--glass-brd);border-radius:30px;padding:6px 15px;margin-bottom:12px;backdrop-filter:blur(8px)}
+.badge .ld{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+h1{font-size:clamp(24px,3vw,38px);font-weight:700;letter-spacing:-.02em;
+  background:linear-gradient(120deg,#ffffff 20%,#a9c2ff 60%,#c9a9ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1}
+.sub{color:var(--ink-dim);font-size:15px;margin-top:8px;font-weight:400}
+
+/* canvas area holds svg (connectors) + node overlay */
+.canvas{position:relative;flex:1 1 auto;margin-top:8px}
+svg.wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.nodes{position:absolute;inset:0}
+
+/* node cards */
+.node{
+  position:absolute;transform:translate(-50%,-50%);
+  width:150px;padding:13px 14px;border-radius:16px;
+  background:var(--glass);border:1px solid var(--glass-brd);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 10px 34px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s, border-color .5s, opacity .6s;
+  opacity:.5;
+  animation:floaty 6s ease-in-out infinite;
+}
+.node.small{width:132px;padding:11px 12px}
+@keyframes floaty{0%,100%{translate:0 0}50%{translate:0 -5px}}
+.node .top{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.node .ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09)}
+.node .ic svg{width:16px;height:16px}
+.node .t{font-size:12.5px;font-weight:600;line-height:1.15;letter-spacing:-.01em}
+.node .d{font-size:10px;color:var(--ink-dim);line-height:1.35;min-height:26px}
+.node .st{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.node .st .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);transition:.4s}
+.node .st .txt{transition:.4s}
+
+/* active / done states, tinted per accent */
+.node.active{opacity:1;transform:translate(-50%,-50%) scale(1.07);animation:none}
+.node.done{opacity:.92;animation:floaty 6s ease-in-out infinite}
+.node[data-accent="blue"].active{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),0 0 30px -4px var(--blue),0 12px 40px rgba(0,0,0,.5)}
+.node[data-accent="cyan"].active{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 30px -4px var(--cyan),0 12px 40px rgba(0,0,0,.5)}
+.node[data-accent="purple"].active{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple),0 0 34px -2px var(--purple),0 12px 40px rgba(0,0,0,.5)}
+.node[data-accent="orange"].active{border-color:var(--orange);box-shadow:0 0 0 1px var(--orange),0 0 30px -4px var(--orange),0 12px 40px rgba(0,0,0,.5)}
+.node[data-accent="green"].active{border-color:var(--green);box-shadow:0 0 0 1px var(--green),0 0 30px -4px var(--green),0 12px 40px rgba(0,0,0,.5)}
+.node[data-accent="red"].active{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 30px -4px var(--red)}
+/* pulsing ring on active */
+.node.active::after{content:"";position:absolute;inset:-3px;border-radius:18px;border:1px solid currentColor;opacity:0;animation:ring 1.8s ease-out infinite;pointer-events:none}
+.node[data-accent="blue"]{color:var(--blue)} .node[data-accent="cyan"]{color:var(--cyan)}
+.node[data-accent="purple"]{color:var(--purple)} .node[data-accent="orange"]{color:var(--orange)}
+.node[data-accent="green"]{color:var(--green)} .node[data-accent="red"]{color:var(--red)}
+@keyframes ring{0%{opacity:.6;inset:-3px}100%{opacity:0;inset:-14px}}
+.node.done .ic{background:rgba(255,255,255,.07)}
+.node.active .st .dot{background:currentColor;box-shadow:0 0 8px currentColor;animation:pulse 1.4s infinite}
+.node.done .st .dot{background:var(--green);box-shadow:0 0 6px var(--green)}
+.node .t,.node .ic svg{color:var(--ink)}
+.node.active .ic{border-color:currentColor;background:color-mix(in srgb,currentColor 16%,transparent)}
+.node.active .ic svg{color:currentColor}
+
+/* incident card popover (step1) */
+.incident{
+  position:absolute;transform:translate(-50%,-50%) scale(.9);left:0;top:0;
+  width:186px;border-radius:14px;background:linear-gradient(160deg,rgba(30,40,70,.92),rgba(16,22,42,.94));
+  border:1px solid rgba(120,150,255,.35);box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 24px -6px var(--blue);
+  padding:12px 13px;opacity:0;transition:opacity .6s,transform .6s cubic-bezier(.2,.8,.2,1);backdrop-filter:blur(10px);z-index:6;pointer-events:none}
+.incident.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.incident .hh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.incident .id{font-family:ui-monospace,monospace;font-size:11px;color:var(--blue);font-weight:600}
+.incident .pr{font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:20px;background:rgba(255,107,107,.16);color:#ff9a9a;border:1px solid rgba(255,107,107,.3)}
+.incident .row{display:flex;justify-content:space-between;font-size:10px;margin:3px 0;color:var(--ink-dim)}
+.incident .row b{color:var(--ink);font-weight:500}
+.incident .sd{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:var(--ink);font-weight:500}
+.incident .sd span{display:block;font-size:8.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+
+/* mini table rows for snowflake */
+.rowsfx{position:absolute;font-family:ui-monospace,monospace;font-size:9px;color:var(--cyan);opacity:0}
+
+/* approval buttons */
+.approval{position:absolute;transform:translate(-50%,-50%);display:flex;gap:8px;opacity:0;transition:.5s;z-index:6;pointer-events:none}
+.approval.show{opacity:1}
+.abtn{font-size:11px;font-weight:600;padding:7px 15px;border-radius:9px;border:1px solid;background:transparent;backdrop-filter:blur(6px);transition:.4s}
+.abtn.ap{color:#7ff0c0;border-color:rgba(66,211,146,.45);background:rgba(66,211,146,.10)}
+.abtn.ap.sel{background:var(--green)!important;color:#05231a!important;border-color:var(--green)!important;box-shadow:0 0 20px -3px var(--green)}
+.abtn.rj{color:var(--red);border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.05)}
+.abtn.rj.dim{opacity:.35}
+
+/* confidence meter (step5) */
+.conf{position:absolute;transform:translate(-50%,-50%);width:150px;opacity:0;transition:.5s;z-index:6;text-align:center}
+.conf.show{opacity:1}
+.conf .lab{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:5px}
+.conf .bar{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.conf .fill{height:100%;width:0;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:4px;transition:width 2.2s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 12px var(--purple)}
+.conf .pct{font-family:ui-monospace,monospace;font-size:13px;font-weight:600;color:var(--ink);margin-top:5px}
+
+/* footer step ticker */
+.controls-row{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px}
+.pp-btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.03em;
+  color:var(--ink);background:var(--glass);border:1px solid var(--glass-brd);border-radius:30px;padding:8px 15px 8px 12px;
+  cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:.2s;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.pp-btn:hover{border-color:rgba(120,150,255,.5);box-shadow:0 0 18px -6px var(--blue),0 6px 20px rgba(0,0,0,.3);transform:translateY(-1px)}
+.pp-btn:active{transform:translateY(0)}
+.pp-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pp-btn .pp-ic{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:var(--cyan)}
+.pp-btn .pp-ic svg{width:16px;height:16px}
+.pp-btn.is-paused .pp-ic{color:var(--green)}
+.pp-btn.ghost{color:var(--ink-dim)}
+.pp-btn.ghost .pp-ic{color:var(--ink-dim)}
+.pp-btn.ghost:hover{color:var(--ink)}
+.ticker{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
+.tk{width:24px;height:3px;border-radius:3px;background:rgba(255,255,255,.12);transition:.4s}
+.tk.on{background:linear-gradient(90deg,var(--blue),var(--purple));box-shadow:0 0 8px var(--blue);width:38px}
+.tk.past{background:rgba(120,150,255,.4)}
+.caption{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);text-align:center;z-index:5;pointer-events:none}
+.caption .k{font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:3px;transition:.4s}
+.caption .h{font-size:15px;font-weight:600;color:var(--ink);transition:.4s;min-height:20px}
+
+@media (max-width:1200px){.node{width:128px}.node .d{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.2s!important}}
+</style>
+</head>
+<body>
+<div class="bg-gradients"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="beam"></div>
+<canvas id="particles"></canvas>
+
+<div class="stage">
+  <header>
+    <div class="badge"><span class="ld"></span> IBM Watsonx Orchestrate</div>
+    <h1>AI-Powered Autonomous Data Support Workflow</h1>
+    <div class="sub">Enterprise Incident Diagnosis, Intelligent Remediation &amp; Continuous Learning</div>
+  </header>
+
+  <div class="canvas" id="canvas">
+    <svg class="wires" id="wires" preserveAspectRatio="none" viewBox="0 0 1600 720">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#6f86c9"/>
+        </marker>
+        <linearGradient id="flow" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#4f8cff" stop-opacity="0"/>
+          <stop offset="50%" stop-color="#3fe0e0" stop-opacity=".9"/>
+          <stop offset="100%" stop-color="#a970ff" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g id="wireLayer"></g>
+      <g id="particleLayer"></g>
+    </svg>
+    <div class="nodes" id="nodeLayer"></div>
+    <!-- incident popover -->
+    <div class="incident" id="incident">
+      <div class="hh"><span class="id">INC019000691</span><span class="pr">High</span></div>
+      <div class="row"><span>Status</span><b>New</b></div>
+      <div class="row"><span>Group</span><b>Data Support</b></div>
+      <div class="sd"><span>Short description</span>MDP Email Scrubbing Failure</div>
+    </div>
+    <!-- confidence meter -->
+    <div class="conf" id="conf">
+      <div class="lab">AI Confidence</div>
+      <div class="bar"><div class="fill" id="confFill"></div></div>
+      <div class="pct" id="confPct">0%</div>
+    </div>
+    <!-- approval buttons -->
+    <div class="approval" id="approval">
+      <button class="abtn ap" id="apBtn">✓ Approve</button>
+      <button class="abtn rj" id="rjBtn">✕ Reject</button>
+    </div>
+    <div class="caption" id="caption"><div class="k" id="capK">Initializing</div><div class="h" id="capH">Preparing workflow…</div></div>
+  </div>
+
+  <div class="controls-row">
+    <button class="pp-btn" id="playBtn" aria-pressed="false" title="Play / Pause (Space)">
+      <span class="pp-ic"></span><span class="pp-tx">Pause</span>
+    </button>
+    <button class="pp-btn ghost" id="replayBtn" title="Restart (R)">
+      <span class="pp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12a8 8 0 108-8 8 8 0 00-6.9 4"/><path d="M4 4v4h4"/></svg></span><span class="pp-tx">Replay</span>
+    </button>
+    <div class="ticker" id="ticker"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- icons (inline svg strings) ---------- */
+const IC = {
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/></svg>',
+  db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.6 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.6 3 8 3s8-1.34 8-3v-6"/></svg>',
+  orch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3 3M17 7l-3 3M7 17l3-3M17 17l-3-3"/></svg>',
+  agent:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 4h6"/><circle cx="9" cy="14" r="1.3" fill="currentColor"/><circle cx="15" cy="14" r="1.3" fill="currentColor"/></svg>',
+  spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M18 18l-2.5-2.5M6 18l2.5-2.5M18 6l-2.5 2.5"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5a2 2 0 012-2h12v18H6a2 2 0 01-2-2z"/><path d="M8 3v18"/></svg>',
+  brain:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4a3 3 0 00-3 3 3 3 0 00-1 5 3 3 0 001 5 3 3 0 003 3V4z"/><path d="M15 4a3 3 0 013 3 3 3 0 011 5 3 3 0 01-1 5 3 3 0 01-3 3V4z"/></svg>',
+  branch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M6 8.5v7M8.5 6h4a3 3 0 013 3M8.5 18h4a3 3 0 003-3"/></svg>',
+  tool:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 6a3.5 3.5 0 00-4.9 4.4l-5 5 2.5 2.5 5-5A3.5 3.5 0 0018 10l-2 2-2-2 2-2z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+  loop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 018-8 8 8 0 016.9 4"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 01-8 8 8 8 0 01-6.9-4"/><path d="M4 20v-4h4"/></svg>',
+};
+
+/* ---------- node definitions (positions in 1600x720 space) ---------- */
+const N = {
+  snow:   {x:110, y:120, accent:'blue',   ic:IC.bell,  t:'ServiceNow',            d:'Monitor Data support incidents', st:'Monitoring'},
+  snow2:  {x:370, y:120, accent:'cyan',   ic:IC.db,    t:'Snowflake Control Table', d:'Log incident + status', st:'Idle'},
+  orch:   {x:640, y:120, accent:'blue',   ic:IC.orch,  t:'Watsonx Orchestrate',   d:'Trigger agent via API', st:'Idle'},
+  agent:  {x:910, y:120, accent:'purple', ic:IC.agent, t:'Diagnosis & Triage Agent', d:'Receive incident ID', st:'Idle'},
+  rag:    {x:1170,y:120, accent:'cyan',   ic:IC.book,  t:'Custom RAG',            d:'KB · docs · logs · closure notes', st:'Idle', small:true},
+  reason: {x:1420,y:120, accent:'purple', ic:IC.brain, t:'AI Reasoning',          d:'Analyse & correlate context', st:'Idle'},
+  decide: {x:1420,y:380, accent:'purple', ic:IC.branch,t:'Remediation Agent',     d:'Tool vs. resolution steps', st:'Idle'},
+  nifi:   {x:1170,y:370, accent:'blue',   ic:IC.tool,  t:'Log Parser Tool',       d:'Python automation', st:'Idle', small:true},
+  token:  {x:1170,y:465, accent:'blue',   ic:IC.tool,  t:'Data Reconciliation Tool', d:'Python automation', st:'Idle', small:true},
+  hyg:    {x:1170,y:560, accent:'blue',   ic:IC.tool,  t:'Schema Validator Tool', d:'Python automation', st:'Idle', small:true},
+  human:  {x:820, y:430, accent:'orange', ic:IC.user,  t:'Data Support Engineer', d:'Review & approve action', st:'Idle'},
+  exec:   {x:520, y:430, accent:'green',  ic:IC.tool,  t:'Execute Tool',          d:'Run approved remediation', st:'Idle'},
+  fb:     {x:250, y:430, accent:'orange', ic:IC.chat,  t:'Feedback Collection',   d:'Helpful? Correct? Notes', st:'Idle'},
+  learn:  {x:250, y:600, accent:'green',  ic:IC.loop,  t:'Continuous Learning',   d:'Improve future triage', st:'Idle'},
+};
+
+/* ---------- wires: [from, to, curve-direction] ---------- */
+const W = [
+  ['snow','snow2'],['snow2','orch'],['orch','agent'],
+  ['agent','rag'],
+  ['rag','reason'],
+  ['reason','decide'],
+  ['decide','nifi'],['decide','token'],['decide','hyg'],
+  ['decide','human'],
+  ['human','exec'],
+  ['exec','fb'],
+  ['fb','learn'],
+  ['learn','reason'],  // feedback loop
+];
+
+/* ---------- build DOM nodes ---------- */
+const canvas=document.getElementById('canvas');
+const nodeLayer=document.getElementById('nodeLayer');
+const VBW=1600, VBH=720;
+function pctX(x){return (x/VBW*100)}
+function pctY(y){return (y/VBH*100)}
+const nodeEls={};
+for(const key in N){
+  const n=N[key];
+  const el=document.createElement('div');
+  el.className='node'+(n.small?' small':'');
+  el.dataset.accent=n.accent; el.dataset.key=key;
+  el.style.left=pctX(n.x)+'%'; el.style.top=pctY(n.y)+'%';
+  el.innerHTML=`<div class="top"><div class="ic">${n.ic}</div><div class="t">${n.t}</div></div>
+    <div class="d">${n.d}</div>
+    <div class="st"><span class="dot"></span><span class="txt">${n.st}</span></div>`;
+  nodeLayer.appendChild(el);
+  nodeEls[key]=el;
+}
+
+/* ---------- build SVG wires ---------- */
+const wireLayer=document.getElementById('wireLayer');
+const particleLayer=document.getElementById('particleLayer');
+const wireEls={};
+function ctrlPath(a,b){
+  const dx=(b.x-a.x), dy=(b.y-a.y);
+  // horizontal-biased bezier
+  const c1x=a.x+dx*0.5, c1y=a.y;
+  const c2x=b.x-dx*0.5, c2y=b.y;
+  return `M ${a.x} ${a.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${b.x} ${b.y}`;
+}
+W.forEach(([f,t],i)=>{
+  const a=N[f], b=N[t];
+  const feedback = (f==='learn'&&t==='reason');
+  const d = feedback
+    ? `M ${a.x} ${a.y} C ${a.x-160} ${a.y+40}, ${b.x+230} ${b.y+240}, ${b.x} ${b.y+34}`
+    : ctrlPath(a,b);
+  // base (dim) path
+  const base=document.createElementNS('http://www.w3.org/2000/svg','path');
+  base.setAttribute('d',d);
+  base.setAttribute('fill','none');
+  base.setAttribute('stroke', feedback?'rgba(66,211,146,.22)':'rgba(120,150,255,.16)');
+  base.setAttribute('stroke-width','1.5');
+  if(feedback) base.setAttribute('stroke-dasharray','6 5');
+  base.setAttribute('marker-end','url(#ah)');
+  wireLayer.appendChild(base);
+  // active (draw) path
+  const act=document.createElementNS('http://www.w3.org/2000/svg','path');
+  act.setAttribute('d',d);
+  act.setAttribute('fill','none');
+  act.setAttribute('stroke', feedback?'#42d392':'url(#flow)');
+  act.setAttribute('stroke-width','2.4');
+  act.setAttribute('filter','url(#glow)');
+  act.setAttribute('stroke-linecap','round');
+  const len=act.getTotalLength ? 0 : 0; // set after in DOM
+  act.style.opacity='0';
+  wireLayer.appendChild(act);
+  wireEls[f+'>'+t]={base,act,d,path:act};
+});
+// set dash lengths now that in DOM
+for(const k in wireEls){
+  const p=wireEls[k].act;
+  const L=p.getTotalLength();
+  p.style.strokeDasharray=L; p.style.strokeDashoffset=L; p.dataset.len=L;
+}
+
+/* ---------- particle travelling along a wire ---------- */
+function emitParticle(key,accent){
+  const w=wireEls[key]; if(!w) return;
+  const p=w.act; const L=parseFloat(p.dataset.len);
+  const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('r','4');
+  const col=({blue:'#4f8cff',cyan:'#3fe0e0',purple:'#a970ff',green:'#42d392',orange:'#ffab5e'})[accent]||'#3fe0e0';
+  dot.setAttribute('fill',col);
+  dot.setAttribute('filter','url(#glow)');
+  particleLayer.appendChild(dot);
+  let start=null; const dur=900;
+  function step(ts){
+    if(!start)start=ts;
+    let t=(ts-start)/dur;
+    if(t>1){dot.remove();return;}
+    const pt=p.getPointAtLength(t*L);
+    dot.setAttribute('cx',pt.x); dot.setAttribute('cy',pt.y);
+    dot.setAttribute('opacity', t<.1? t*10 : t>.9? (1-t)*10 : 1);
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function drawWire(key){
+  const w=wireEls[key]; if(!w) return;
+  const p=w.act;
+  p.style.transition='none'; p.style.strokeDashoffset=p.dataset.len; p.style.opacity='1';
+  void p.getBoundingClientRect();
+  p.style.transition='stroke-dashoffset .9s ease';
+  p.style.strokeDashoffset='0';
+}
+
+/* ---------- helpers ---------- */
+function setState(key,state){
+  const el=nodeEls[key]; if(!el)return;
+  el.classList.remove('active','done');
+  if(state)el.classList.add(state);
+  const txt=el.querySelector('.st .txt');
+  if(state==='active')txt.textContent='Processing';
+  else if(state==='done')txt.textContent='Complete';
+}
+function activate(key){setState(key,'active');}
+function complete(key){setState(key,'done');}
+
+const capK=document.getElementById('capK'), capH=document.getElementById('capH');
+function caption(k,h){capK.textContent=k;capH.textContent=h;}
+
+/* ticker */
+const ticker=document.getElementById('ticker');
+const STEPS=10;
+for(let i=0;i<STEPS;i++){const t=document.createElement('div');t.className='tk';ticker.appendChild(t);}
+const tks=[...ticker.children];
+function tick(step){tks.forEach((t,i)=>{t.classList.toggle('on',i===step);t.classList.toggle('past',i<step);});}
+
+/* incident + conf + approval elements */
+const incident=document.getElementById('incident');
+const conf=document.getElementById('conf'), confFill=document.getElementById('confFill'), confPct=document.getElementById('confPct');
+const approval=document.getElementById('approval'), apBtn=document.getElementById('apBtn'), rjBtn=document.getElementById('rjBtn');
+function placeOverlay(el,key,dx=0,dy=0){el.style.left=pctX(N[key].x+dx)+'%';el.style.top=pctY(N[key].y+dy)+'%';}
+
+/* ---------- timeline (pausable clock-driven engine) ---------- */
+let events=[];        // {at, fn, done}
+let baseTime=0;       // performance.now() reference for t=0
+let elapsed=0;        // ms elapsed within current cycle (frozen while paused)
+let paused=false;
+let rafId=null;
+let scheduleCursor=0; // running total used by after() while building the timeline
+
+function after(ms,fn){ scheduleCursor+=0; events.push({at:ms,fn,done:false}); }
+// keep old signature usage: after(T,fn) passes an absolute time already summed by caller
+// (callers use after(T+=..., fn) so `ms` is absolute) — we store as absolute `at`.
+
+function clearAll(){ events=[]; }
+
+function driver(now){
+  if(!paused){
+    elapsed = now - baseTime;
+    for(const e of events){
+      if(!e.done && elapsed>=e.at){ e.done=true; try{e.fn();}catch(err){console.error(err);} }
+    }
+  }
+  rafId=requestAnimationFrame(driver);
+}
+
+/* pause-aware delay used INSIDE step callbacks (nested timing) */
+function delay(ms){ // returns absolute target time from "now" in cycle clock
+  return elapsed+ms;
+}
+function schedule(atAbs,fn){ events.push({at:atAbs,fn,done:false}); }
+
+/* pause-aware interval (for the confidence counter) */
+let intervals=[]; // {nextAt, every, fn, stop}
+function everyMs(ms,fn){ const o={nextAt:elapsed+ms,every:ms,fn,stopped:false}; intervals.push(o); return o; }
+function stopInterval(o){ if(o)o.stopped=true; }
+
+function resetAll(){
+  clearAll();
+  intervals=[];
+  for(const k in nodeEls){nodeEls[k].classList.remove('active','done');nodeEls[k].querySelector('.st .txt').textContent=N[k].st;}
+  for(const k in wireEls){const p=wireEls[k].act;p.style.transition='none';p.style.strokeDashoffset=p.dataset.len;p.style.opacity='0';}
+  incident.classList.remove('show');
+  conf.classList.remove('show');confFill.style.width='0';confPct.textContent='0%';
+  approval.classList.remove('show');apBtn.classList.remove('sel');rjBtn.classList.remove('dim');
+}
+
+function run(){
+  resetAll();
+  baseTime=performance.now(); elapsed=0;
+  let T=0; const S=1300; // step spacing
+
+  // STEP 1 — ServiceNow
+  after(T+=300,()=>{tick(0);caption('Step 1 · Detection','Monitoring ServiceNow for Data support incidents');
+    activate('snow');placeOverlay(incident,'snow',80,150);incident.classList.add('show');});
+
+  // STEP 2 — Snowflake
+  after(T+=S+400,()=>{tick(1);caption('Step 2 · Control Table','Logging incident, status & timestamp in Snowflake');
+    complete('snow');incident.classList.remove('show');drawWire('snow>snow2');emitParticle('snow>snow2','cyan');activate('snow2');});
+
+  // STEP 3 — Watsonx
+  after(T+=S,()=>{tick(2);caption('Step 3 · Orchestration','Watsonx Orchestrate triggers the agent via API');
+    complete('snow2');drawWire('snow2>orch');emitParticle('snow2>orch','blue');activate('orch');});
+
+  // STEP 4 — agent + retrieval fork
+  after(T+=S,()=>{tick(3);caption('Step 4 · Context Retrieval','Diagnosis & Triage Agent receives incident ID');
+    complete('orch');drawWire('orch>agent');emitParticle('orch>agent','blue');activate('agent');});
+  after(T+=S,()=>{caption('Step 4 · Context Retrieval','Custom RAG retrieves incident context & closure notes');
+    complete('agent');
+    drawWire('agent>rag');
+    emitParticle('agent>rag','cyan');
+    activate('rag');});
+
+  // STEP 5 — reasoning
+  after(T+=S,()=>{tick(4);caption('Step 5 · AI Reasoning','Correlating logs, closures & similar incidents');
+    complete('rag');
+    drawWire('rag>reason');
+    emitParticle('rag>reason','purple');
+    activate('reason');
+    placeOverlay(conf,'reason',0,120);conf.classList.add('show');
+    schedule(delay(120),()=>{confFill.style.width='94%';});
+    let c=0;const iv=everyMs(110,()=>{c+=Math.ceil((94-c)/6);if(c>=94){c=94;stopInterval(iv);}confPct.textContent=c+'%';});
+  });
+
+  // STEP 6 — decision
+  after(T+=S+800,()=>{tick(5);caption('Step 6 · Remediation','Selecting automation tool vs. generated steps');
+    complete('reason');conf.classList.remove('show');
+    drawWire('reason>decide');emitParticle('reason>decide','purple');activate('decide');});
+  after(T+=S,()=>{caption('Step 6 · Remediation','Automation tool available — Log Parser Tool matched');
+    ['decide>nifi','decide>token','decide>hyg'].forEach((k,i)=>schedule(delay(i*140),()=>{drawWire(k);emitParticle(k, 'blue');}));
+    activate('nifi');complete('token');complete('hyg');});
+
+  // STEP 7 — human approval
+  after(T+=S+300,()=>{tick(6);caption('Step 7 · Human Approval','Data support engineer reviews reasoning, tool & impact');
+    complete('nifi');
+    drawWire('decide>human');emitParticle('decide>human','orange');activate('human');
+    placeOverlay(approval,'human',0,95);approval.classList.add('show');});
+  after(T+=S,()=>{apBtn.classList.add('sel');rjBtn.classList.add('dim');
+    caption('Step 7 · Human Approval','Approved — remediation cleared to execute');});
+
+  // STEP 8 — execute
+  after(T+=S,()=>{tick(7);caption('Step 8 · Execution','Executing approved remediation tool');
+    complete('human');approval.classList.remove('show');
+    drawWire('human>exec');emitParticle('human>exec','green');activate('exec');});
+  after(T+=S,()=>{caption('Step 8 · Execution','Remediation complete — incident status updated');complete('exec');});
+
+  // STEP 9 — feedback
+  after(T+=S-200,()=>{tick(8);caption('Step 9 · Feedback','Engineer submits helpful / correct + notes');
+    drawWire('exec>fb');emitParticle('exec>fb','orange');activate('fb');});
+
+  // STEP 10 — continuous learning + loop back
+  after(T+=S,()=>{tick(9);caption('Step 10 · Continuous Learning','Feedback stored to improve future triage');
+    complete('fb');drawWire('fb>learn');emitParticle('fb>learn','green');activate('learn');});
+  after(T+=S,()=>{caption('Step 10 · Continuous Learning','Feedback loop returns to the Diagnosis Agent');
+    complete('learn');drawWire('learn>reason');
+    emitParticle('learn>reason','green');
+    schedule(delay(500),()=>emitParticle('learn>reason','green'));
+    nodeEls['reason'].classList.add('active');
+  });
+
+  // restart
+  after(T+=S+2400,()=>{ run(); });
+
+  if(rafId===null) rafId=requestAnimationFrame(driver);
+}
+
+/* interval ticking folded into the driver loop */
+(function intervalPump(){
+  if(!paused){
+    for(const o of intervals){
+      if(o.stopped) continue;
+      while(elapsed>=o.nextAt){ o.fn(); o.nextAt+=o.every; if(o.stopped)break; }
+    }
+  }
+  requestAnimationFrame(intervalPump);
+})();
+
+/* ---------- pause / play control ---------- */
+let pauseAnchor=0;
+function setPaused(p){
+  if(p===paused) return;
+  paused=p;
+  if(paused){
+    pauseAnchor=performance.now();               // freeze
+  }else{
+    baseTime += (performance.now()-pauseAnchor);  // shift clock forward by paused duration
+  }
+  updatePlayBtn();
+}
+function togglePause(){ setPaused(!paused); }
+
+function updatePlayBtn(){
+  const b=document.getElementById('playBtn');
+  if(!b) return;
+  b.setAttribute('aria-pressed', paused?'true':'false');
+  b.classList.toggle('is-paused',paused);
+  b.querySelector('.pp-ic').innerHTML = paused
+    ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'      // play triangle
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'; // pause bars
+  b.querySelector('.pp-tx').textContent = paused?'Play':'Pause';
+}
+function restartCycle(){ paused=false; cancelAnimationFrame(rafId); rafId=null; run(); updatePlayBtn(); }
+
+/* ---------- background particle field ---------- */
+const pc=document.getElementById('particles'),pctx=pc.getContext('2d');
+let W2,H2,parts=[];
+function resize(){W2=pc.width=innerWidth;H2=pc.height=innerHeight;
+  parts=Array.from({length:Math.min(70,Math.floor(W2/26))},()=>({
+    x:Math.random()*W2,y:Math.random()*H2,r:Math.random()*1.6+.4,
+    vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12,a:Math.random()*.5+.2}));}
+resize();addEventListener('resize',resize);
+function drawParts(){pctx.clearRect(0,0,W2,H2);
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=W2;if(p.x>W2)p.x=0;if(p.y<0)p.y=H2;if(p.y>H2)p.y=0;
+    pctx.beginPath();pctx.arc(p.x,p.y,p.r,0,6.28);
+    pctx.fillStyle=`rgba(150,180,255,${p.a})`;pctx.fill();}
+  requestAnimationFrame(drawParts);}
+drawParts();
+
+/* kick off */
+window.addEventListener('load',()=>{ updatePlayBtn(); setTimeout(run,600); });
+
+/* controls wiring */
+document.getElementById('playBtn').addEventListener('click',togglePause);
+document.getElementById('replayBtn').addEventListener('click',restartCycle);
+window.addEventListener('keydown',(e)=>{
+  if(e.code==='Space'){e.preventDefault();togglePause();}
+  else if(e.key==='r'||e.key==='R'){restartCycle();}
+});
+</script>
+</body>
+</html>
